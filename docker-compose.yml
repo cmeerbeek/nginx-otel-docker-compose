@@ -5,6 +5,7 @@ services:
     restart: always
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
+      - ./nginx/ngx_otel_module.so:/usr/lib/nginx/modules/ngx_otel_module.so
     environment: 
       - FLASK_SERVER_ADDR=flask-app:8000
     ports:
