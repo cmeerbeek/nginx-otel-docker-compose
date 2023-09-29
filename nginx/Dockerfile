@@ -1,11 +1,14 @@
-FROM nginx:1.25.2
+FROM nginx:1.25.2-alpine
 
-# Add bash for boot cmd
-RUN apk add bash
+# Add packages
+RUN apk add bash c-ares re2
+RUN ln -s /usr/lib/libre2.so.10 /usr/lib/libre2.so.9
 
 # Add nginx.conf to container
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx start.sh /app/start.sh
+#COPY --chown=nginx:nginx ngx_otel_module.so /etc/nginx/modules/ngx_otel_module.so
+COPY ngx_otel_module.so /usr/lib/nginx/modules/ngx_otel_module.so
 
 # set workdir
 WORKDIR /app
