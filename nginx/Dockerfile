@@ -1,14 +1,27 @@
-FROM nginx:1.25.2-alpine
+ARG NGINX_VERSION=1.25.2
+FROM nginx:${NGINX_VERSION} AS BUILDER
 
 # Add packages
-RUN apk add bash c-ares re2
-RUN ln -s /usr/lib/libre2.so.10 /usr/lib/libre2.so.9
+RUN apt update && apt install git cmake build-essential libssl-dev zlib1g-dev libpcre3-dev pkg-config libc-ares-dev libre2-dev -y
+
+RUN git clone https://github.com/nginx/nginx.git && cd nginx && git checkout release-${NGINX_VERSION}
+RUN cd nginx && ./auto/configure --with-compat
+RUN git clone https://github.com/nginxinc/nginx-otel.git && cd nginx-otel && mkdir build
+RUN cd nginx-otel/build && cmake -DNGX_OTEL_NGINX_BUILD_DIR=/nginx/objs ..
+RUN cd nginx-otel/build && make -j20
+
+
+FROM nginx:${NGINX_VERSION}
+
+# Add packages  
+RUN apt update && apt install libc-ares2 libre2-9
 
 # Add nginx.conf to container
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
+COPY --chown=nginx:nginx default.conf /etc/nginx/conf.d/default.conf
 COPY --chown=nginx:nginx start.sh /app/start.sh
 #COPY --chown=nginx:nginx ngx_otel_module.so /etc/nginx/modules/ngx_otel_module.so
-COPY ngx_otel_module.so /usr/lib/nginx/modules/ngx_otel_module.so
+COPY --from=BUILDER nginx-otel/build/ngx_otel_module.so /usr/lib/nginx/modules/ngx_otel_module.so
 
 # set workdir
 WORKDIR /app
