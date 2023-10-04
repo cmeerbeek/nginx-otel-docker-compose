@@ -3,9 +3,22 @@ splunk:
       indexes:
         directory: /opt/splunk/etc/apps/search/local
         content:
-          amq-metrics:
-            coldPath: $SPLUNK_DB/amq-metrics/colddb
+          k6-metrics:
+            coldPath: $SPLUNK_DB/k6-metrics/colddb
             datatype: metric
-            homePath: $SPLUNK_DB/amq-metrics/db
+            homePath: $SPLUNK_DB/k6-metrics/db
             maxTotalDataSizeMB: 512000
-            thawedPath: $SPLUNK_DB/amq-metrics/thaweddb
+            thawedPath: $SPLUNK_DB/k6-metrics/thaweddb
+          nginx-metrics:
+            coldPath: $SPLUNK_DB/nginx-metrics/colddb
+            datatype: metric
+            homePath: $SPLUNK_DB/nginx-metrics/db
+            maxTotalDataSizeMB: 512000
+            thawedPath: $SPLUNK_DB/nginx-metrics/thaweddb
+      inputs:
+        directory: /opt/splunk/etc/system/local
+        content:
+          udp://8125:
+            connection_host: ip
+            index: k6-metrics
+            sourcetype: statsd
