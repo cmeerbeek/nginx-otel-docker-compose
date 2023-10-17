@@ -10,8 +10,7 @@ RUN cd nginx && ./auto/configure --with-compat
 RUN git clone https://github.com/nginxinc/nginx-otel.git && cd nginx-otel && mkdir build
 RUN cd nginx-otel/build && cmake -DNGX_OTEL_NGINX_BUILD_DIR=/nginx/objs ..
 RUN cd nginx-otel/build && make -j20
-RUN strip --strip-debug nginx-otel/build/ngx_otel_module.so
-
+RUN strip --strip-debug /nginx-otel/build/ngx_otel_module.so
 
 FROM nginx:${NGINX_VERSION}
 
