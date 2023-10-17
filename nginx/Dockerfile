@@ -4,6 +4,7 @@ FROM nginx:${NGINX_VERSION} AS BUILDER
 # Add packages
 RUN apt update && apt install git cmake build-essential libssl-dev zlib1g-dev libpcre3-dev pkg-config libc-ares-dev libre2-dev -y
 
+# Build module
 RUN git clone https://github.com/nginx/nginx.git && cd nginx && git checkout release-${NGINX_VERSION}
 RUN cd nginx && ./auto/configure --with-compat
 RUN git clone https://github.com/nginxinc/nginx-otel.git && cd nginx-otel && mkdir build

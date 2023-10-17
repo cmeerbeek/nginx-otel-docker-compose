@@ -9,6 +9,7 @@ Project structure:
 ├── docker-compose.yml
 ├── otel-collector-config.yml
 ├── splunk.yml
+├── README.md
 ├── flask
 │   ├── app.py
 │   ├── Dockerfile
@@ -58,9 +59,10 @@ Listing containers must show two containers running and the port mapping as belo
 
 ```bash
 $ docker ps
-CONTAINER ID   IMAGE            COMMAND                  CREATED              STATUS                        PORTS                              NAMES
-bde3f29cf571   ...nginx-proxy   "/docker-entrypoint.…"   About a minute ago   Up About a minute (healthy)   0.0.0.0:80->80/tcp                 ...nginx-proxy_1
-86c44470b547   ...flask-app     "gunicorn -w 3 -t 60…"   About a minute ago   Up About a minute (healthy)   5000/tcp, 0.0.0.0:8000->8000/tcp   ...flask-app_1
+CONTAINER ID   IMAGE                    COMMAND                  CREATED              STATUS                        PORTS
+bde3f29cf571   ...nginx-proxy           "/docker-entrypoint.…"   About a minute ago   Up About a minute (healthy)   0.0.0.0:80->80/tcp
+86c44470b547   ...flask-app             "gunicorn -w 3 -t 60…"   About a minute ago   Up About a minute (healthy)   5000/tcp, 0.0.0.0:8000->8000/tcp
+4fe34d9d1ff4   ...all-in-one:latest     "/go/bin/all-in-one"     About a minute ago   Up About a minute (healthy)   16686/tcp, 0.0.0.0:4317-4318->4317-4318/tcp
 ```
 
 After the application starts, navigate to `http://localhost:80` in your web browser or run:
@@ -70,15 +72,16 @@ $ curl localhost:80
 Hello World!
 ```
 
+When you've made some requests, navigate to `http://localhost:16686` in your web browser and view the traces in Jaeger.
+
 Stop and remove the containers
 
 ```bash
 $ docker compose down
-Stopping nginx-wsgi-flask_nginx-proxy_1 ... done
-Stopping nginx-wsgi-flask_flask-app_1   ... done
-Removing nginx-wsgi-flask_nginx-proxy_1 ... done
-Removing nginx-wsgi-flask_flask-app_1   ... done
-Removing network nginx-wsgi-flask_default
+V nginx-otel-docker-compose-nginx-proxy_1     Removed
+V nginx-otel-docker-compose-flask-app_1       Removed
+V nginx-otel-docker-compose-jager_tracing_1   Removed
+V Network nginx-otel-docker-compose_default   Removed
 ```
 
 ## About

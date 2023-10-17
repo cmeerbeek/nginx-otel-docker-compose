@@ -2,10 +2,10 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: "amq-prom-metrics"
+        - job_name: "nginx-prom-metrics"
           metrics_path: /metrics
           static_configs:
-            - targets: ["amq-demo-broker:8161"]
+            - targets: ["nginx-exporter:9113"]
           scrape_interval: 60s
 
 exporters:
@@ -13,9 +13,9 @@ exporters:
     # Splunk HTTP Event Collector token.
     token: "00000000-0000-0000-0000-0000000000000"
     # URL to a Splunk instance to send data to.
-    endpoint: "https://splunk:8088/services/collector"
+    endpoint: "https://splunk-otel:8088/services/collector"
     # Splunk index, optional name of the Splunk index targeted.
-    index: "amq-metrics"
+    index: "nginx-metrics"
     # Maximum HTTP connections to use simultaneously when sending data. Defaults to 100.
     max_connections: 20
     # Whether to disable gzip compression over HTTP. Defaults to false.

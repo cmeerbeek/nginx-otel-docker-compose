@@ -3,10 +3,12 @@ services:
   nginx-proxy:
     build: nginx
     restart: always
+    container_name: nginx-proxy
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
     environment: 
-      - FLASK_SERVER_ADDR=flask-app:8000
+      - FLASK_SERVER_ADDR=flask-app:7766
+      - OTEL_ADDR=jaeger-tracing:4317
     ports:
       - "80:80"
     depends_on:
@@ -17,6 +19,14 @@ services:
       timeout: 10s
       retries: 3
     command: /app/start.sh
+
+  # NGINX Prometheus exporter
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.11.0
+    container_name: nginx-exporter
+    ports:
+      - 9113:9113
+    command: -nginx.scrape-uri=http://nginx-proxy/nginx_status
 
   # Flask APP
   flask-app:
@@ -30,38 +40,59 @@ services:
       timeout: 10s
       retries: 3
     command: gunicorn -w 3 -t 60 -b 0.0.0.0:8000 app:app
+    container_name: flask-app
 
-  # Splunk Enterprise server:
-  #splunk:
-  #  image: splunk/splunk:latest
-  #  container_name: splunk
-  #  environment:
-  #    - SPLUNK_START_ARGS=--accept-license
-  #    - SPLUNK_HEC_TOKEN=00000000-0000-0000-0000-0000000000000
-  #    - SPLUNK_PASSWORD=changeme
-  #  ports:
-  #    - 18000:8000
-  #  healthcheck:
-  #    test: [ 'CMD', 'curl', '-f', 'http://localhost:8000' ]
-  #    interval: 5s
-  #    timeout: 5s
-  #    retries: 20
-  #  volumes:
-  #    - ./splunk.yml:/tmp/defaults/default.yml
-  #    - /opt/splunk/var
-  #    - /opt/splunk/etc
-  #  depends_on:
-  #    - amq-demo-broker
+  # Jaeger
+  jaeger-tracing:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+      - "6831:6831"
+      - "6832:6832"
+      - "4317:4317"
+
+  # k6 Load Testing
+  k6:
+    image: grafana/k6:latest
+    container_name: k6
+    ports:
+      - "6565:6565"
+    environment:
+      - K6_OUT=statsd
+      - K6_STATSD_ADDR=splunk-otel:8125
+    volumes:
+      - ./scripts:/scripts
+    depends_on:
+      - splunk-otel
 
   # OpenTelemetry Collector
-  #otelcollector:
-  #  image: quay.io/signalfx/splunk-otel-collector:0.71.0
-  #  container_name: otelcollector
-  #  command: ["--config=/etc/otel-collector-config.yml", "--set=service.telemetry.logs.level=debug"]
-  #  volumes:
-  #    - ./otel-collector-config.yml:/etc/otel-collector-config.yml
-  #    - ./logs:/logs
-  #    - ./checkpoint:/checkpoint
-  #  depends_on:
-  #    splunk:
-  #      condition: service_healthy
+  otelcollector-nginx:
+    image: quay.io/signalfx/splunk-otel-collector:0.71.0
+    container_name: otelcollector-nginx
+    command: ["--config=/etc/otel-collector-config.yml", "--set=service.telemetry.logs.level=debug"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    depends_on:
+      splunk-otel:
+        condition: service_healthy
+
+  # Splunk Enterprise server
+  splunk-otel:
+    image: splunk/splunk:latest
+    container_name: splunk-otel
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_HEC_TOKEN=00000000-0000-0000-0000-0000000000000
+      - SPLUNK_PASSWORD=changeme
+    ports:
+      - 18000:8000
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:8000' ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ./splunk.yml:/tmp/defaults/default.yml
+      - /opt/splunk/var
+      - /opt/splunk/etc
